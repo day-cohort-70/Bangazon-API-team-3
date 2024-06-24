@@ -81,13 +81,15 @@ class Profile(ViewSet):
             }
         """
         try:
-            current_user = Customer.objects.get(user=4)
+            current_user = Customer.objects.get(user=request.user)
             current_user.recommends = Recommendation.objects.filter(recommender=current_user)
 
             serializer = ProfileSerializer(
                 current_user, many=False, context={'request': request})
 
             return Response(serializer.data)
+        except Customer.DoesNotExist:
+            return Response({'message': 'Customer profile not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
             return HttpResponseServerError(ex)
 
