@@ -59,9 +59,10 @@ class Product(SafeDeleteModel):
         """
         ratings = ProductRating.objects.filter(product=self)
         total_rating = 0
+        if not ratings.exists():
+            return 0
         for rating in ratings:
             total_rating += rating.rating
-
         avg = total_rating / len(ratings)
         return avg
 
