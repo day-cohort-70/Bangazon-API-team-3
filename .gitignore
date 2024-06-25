@@ -152,3 +152,6 @@ migrations
 docs
 Pipfile.lock
 poetry.lock
+
+# VScode extensions
+.vscode/extensions.json
