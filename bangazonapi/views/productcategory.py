@@ -57,9 +57,10 @@ class ProductCategories(ViewSet):
         product_category = ProductCategory.objects.all()
 
         # Support filtering ProductCategorys by area id
-        # name = self.request.query_params.get('name', None)
-        # if name is not None:
-        #     ProductCategories = ProductCategories.filter(name=name)
+        
+        name = self.request.query_params.get('name', None)
+        if name is not None:
+            ProductCategories = ProductCategories.filter(name=name)
 
         serializer = ProductCategorySerializer(
             product_category, many=True, context={'request': request})
