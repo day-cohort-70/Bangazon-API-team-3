@@ -1,0 +1,75 @@
+[
+    {
+      "model": "bangazonapi.like",
+      "pk": 1,
+      "fields": {
+        "customer": 8,
+        "product": 100,
+        "created_date": "2024-06-22T00:00:00Z"
+      }
+    },
+    {
+      "model": "bangazonapi.like",
+      "pk": 2,
+      "fields": {
+        "customer": 8,
+        "product": 101,
+        "created_date": "2024-06-22T01:00:00Z"
+      }
+    },
+    {
+      "model": "bangazonapi.like",
+      "pk": 3,
+      "fields": {
+        "customer": 5,
+        "product": 102,
+        "created_date": "2024-06-22T02:00:00Z"
+      }
+    },
+    {
+      "model": "bangazonapi.like",
+      "pk": 4,
+      "fields": {
+        "customer": 5,
+        "product": 103,
+        "created_date": "2024-06-22T03:00:00Z"
+      }
+    },
+    {
+      "model": "bangazonapi.like",
+      "pk": 5,
+      "fields": {
+        "customer": 6,
+        "product": 104,
+        "created_date": "2024-06-22T04:00:00Z"
+      }
+    },
+    {
+      "model": "bangazonapi.like",
+      "pk": 6,
+      "fields": {
+        "customer": 6,
+        "product": 105,
+        "created_date": "2024-06-22T05:00:00Z"
+      }
+    },
+    {
+      "model": "bangazonapi.like",
+      "pk": 7,
+      "fields": {
+        "customer": 7,
+        "product": 106,
+        "created_date": "2024-06-22T06:00:00Z"
+      }
+    },
+    {
+      "model": "bangazonapi.like",
+      "pk": 8,
+      "fields": {
+        "customer": 7,
+        "product": 107,
+        "created_date": "2024-06-22T07:00:00Z"
+      }
+    }
+  ]
+  
