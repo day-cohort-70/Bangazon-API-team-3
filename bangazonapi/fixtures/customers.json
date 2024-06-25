@@ -1,7 +1,7 @@
 [
 {
     "model": "bangazonapi.customer",
-    "pk": 4,
+    "pk": 5,
     "fields": {
         "user": 5,
         "phone_number": "555-1212",
@@ -10,7 +10,7 @@
 },
 {
     "model": "bangazonapi.customer",
-    "pk": 5,
+    "pk": 6,
     "fields": {
         "user": 6,
         "phone_number": "555-1212",
@@ -19,7 +19,7 @@
 },
 {
     "model": "bangazonapi.customer",
-    "pk": 6,
+    "pk": 7,
     "fields": {
         "user": 7,
         "phone_number": "555-1212",
@@ -28,7 +28,7 @@
 },
 {
     "model": "bangazonapi.customer",
-    "pk": 7,
+    "pk": 8,
     "fields": {
         "user": 8,
         "phone_number": "555-1212",

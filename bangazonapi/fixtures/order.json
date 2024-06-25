@@ -84,7 +84,7 @@
         "pk": 10,
         "model": "bangazonapi.order",
         "fields": {
-            "customer_id": 4,
+            "customer_id": 8,
             "created_date": "2018-11-03",
             "payment_type_id": null
         }
