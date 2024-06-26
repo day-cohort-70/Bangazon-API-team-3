@@ -29,8 +29,6 @@ class StoreSerializer(serializers.ModelSerializer):
 
 class Stores(ViewSet):
     def list(self, request):
-        stores = Store.objects.select_related("seller__user").annotate(
-            product_count=Count("products")
-        )
+        stores = Store.objects.annotate(product_count=Count("products"))
         serializer = StoreSerializer(stores, many=True, context={"request": request})
         return Response(serializer.data)
