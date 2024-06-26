@@ -153,5 +153,9 @@ docs
 Pipfile.lock
 poetry.lock
 
-# VScode extensions
-.vscode/extensions.json
+# VScode 
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
