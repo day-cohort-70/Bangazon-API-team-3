@@ -264,7 +264,7 @@ class Products(ViewSet):
 
         store = self.request.query_params.get("store", None)
 
-        """
+        
         # Support filtering by category and/or quantity
         category = self.request.query_params.get("category", None)
         quantity = self.request.query_params.get("quantity", None)
@@ -295,7 +295,7 @@ class Products(ViewSet):
                 return False
 
             products = filter(sold_filter, products)
-                    """
+                    
 
         if store is not None:
             products = products.filter(store__id=store)
