@@ -1,2 +1,4 @@
 [FORMAT]
 good-names=i,j,ex,pk
+
+load-plugins=pylint_django

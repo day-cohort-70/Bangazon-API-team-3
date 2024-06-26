@@ -34,6 +34,42 @@ class LineItems(ViewSet):
     #   attribute on this field.
     # queryset = OrderProduct.objects.all()
 
+    def create(self, request):
+        # Add a product to the cart
+        try:
+            # Get the customer
+            customer = Customer.objects.get(user=request.auth.user)
+
+            # Get or create an open order (cart)
+            try:
+                order = Order.objects.get(customer=customer, payment_type=None)
+            except Order.DoesNotExist:
+                order = Order.objects.create(customer=customer, payment_type=None)
+
+            # Get the product
+            product_id = request.data.get("product_id")
+            product = Product.objects.get(pk=product_id)
+
+            # Check if the product is already in the cart
+            try:
+                line_item = OrderProduct.objects.get(order=order, product=product)
+            except OrderProduct.DoesNotExist:
+                line_item = None
+
+            # If the product is already in the cart, update the quantity
+            if line_item is not None:
+                line_item.quantity += 1
+                line_item.save()
+
+            # If the product is not in the cart, create a new line item
+            else:
+                OrderProduct.objects.create(order=order, product=product, quantity=1)
+
+            # Return a success response
+            return Response({"message": "Product added to cart"}, status=status.HTTP_201_CREATED)
+        except Exception as ex:
+            return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     def retrieve(self, request, pk=None):
         """
         @api {GET} /cart/:id DELETE line item from cart
