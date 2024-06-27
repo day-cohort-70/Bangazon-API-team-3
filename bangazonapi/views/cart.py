@@ -12,6 +12,7 @@ class Cart(ViewSet):
     """Shopping cart for Bangazon eCommerce"""
 
     def create(self, request):
+        """Add a product to the cart"""
         """
         @api {POST} /cart POST new line items to cart
         @apiName AddLineItem
@@ -21,23 +22,48 @@ class Cart(ViewSet):
             HTTP/1.1 204 No Content
         @apiParam {Number} product_id Id of product to add
         """
-        current_user = Customer.objects.get(user=request.auth.user)
-
         try:
-            open_order = Order.objects.get(
-                customer=current_user, payment_type__isnull=True)
-        except Order.DoesNotExist as ex:
-            open_order = Order()
-            open_order.created_date = datetime.datetime.now()
-            open_order.customer = current_user
-            open_order.save()
+            # Get the current user
+            current_user = Customer.objects.get(user=request.auth.user)
 
-        line_item = OrderProduct()
-        line_item.product = Product.objects.get(pk=request.data["product_id"])
-        line_item.order = open_order
-        line_item.save()
+            # Get or create an open order (cart)
+            try:
+                open_order = Order.objects.get(customer=current_user, payment_type=None)
+            except Order.DoesNotExist:
+                open_order = Order()
+                open_order.created_date = datetime.datetime.now()
+                open_order.customer = current_user
+                open_order.save()
 
-        return Response({}, status=status.HTTP_204_NO_CONTENT)
+            # Get the product
+            product_id = request.data.get("product_id")
+            try:
+                product = Product.objects.get(pk=product_id)
+            except Product.DoesNotExist:
+                return Response({"message": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Check if the product is already in the cart
+            try:
+                line_item = OrderProduct.objects.get(order=open_order, product=product)
+            except OrderProduct.DoesNotExist:
+                line_item = None
+
+            # Add the product to the cart or update its quantity
+            if line_item is not None:
+                line_item.quantity += 1
+                line_item.save()
+            else:
+                line_item = OrderProduct()
+                line_item.order = open_order
+                line_item.product = product
+                line_item.quantity = 1
+                line_item.save()
+
+            # Return a success response
+            return Response({"message": "Product added to cart"}, status=status.HTTP_201_CREATED)
+
+        except Exception as ex:
+            return Response({"message": str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def destroy(self, request, pk=None):

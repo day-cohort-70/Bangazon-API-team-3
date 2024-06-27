@@ -34,41 +34,53 @@ class LineItems(ViewSet):
     #   attribute on this field.
     # queryset = OrderProduct.objects.all()
 
-    def create(self, request):
-        # Add a product to the cart
+
+    def update(self, request, pk=None):
+        """Update the quantity of a product in the cart"""
         try:
-            # Get the customer
-            customer = Customer.objects.get(user=request.auth.user)
+            # Get the current user
+            current_user = Customer.objects.get(user=request.auth.user)
 
-            # Get or create an open order (cart)
-            try:
-                order = Order.objects.get(customer=customer, payment_type=None)
-            except Order.DoesNotExist:
-                order = Order.objects.create(customer=customer, payment_type=None)
+            # Get the open order (cart) for the current user
+            open_order = Order.objects.get(customer=current_user, payment_type=None)
 
-            # Get the product
-            product_id = request.data.get("product_id")
-            product = Product.objects.get(pk=product_id)
+            # Get the line item
+            line_item = OrderProduct.objects.get(pk=pk, order=open_order)
 
-            # Check if the product is already in the cart
-            try:
-                line_item = OrderProduct.objects.get(order=order, product=product)
-            except OrderProduct.DoesNotExist:
-                line_item = None
+            # Get the new quantity from the request data
+            new_quantity = request.data.get('quantity')
 
-            # If the product is already in the cart, update the quantity
-            if line_item is not None:
-                line_item.quantity += 1
+            # Ensure the new quantity is a positive integer
+            if new_quantity is not None and isinstance(new_quantity, int) and new_quantity > 0:
+                line_item.quantity = new_quantity
                 line_item.save()
-
-            # If the product is not in the cart, create a new line item
+                return Response({
+                    'message': 'Quantity updated',
+                    'product': line_item.product.name,
+                    'quantity': line_item.quantity
+                }, status=status.HTTP_200_OK)
             else:
-                OrderProduct.objects.create(order=order, product=product, quantity=1)
+                return Response({
+                    'message': 'Invalid quantity. Please provide a positive integer.'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Return a success response
-            return Response({"message": "Product added to cart"}, status=status.HTTP_201_CREATED)
+        except Customer.DoesNotExist:
+            return Response({
+                'message': 'Customer not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Order.DoesNotExist:
+            return Response({
+                'message': 'No open order found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except OrderProduct.DoesNotExist:
+            return Response({
+                'message': 'Product not found in cart'
+            }, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
-            return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                'message': str(ex)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
     def retrieve(self, request, pk=None):
         """
