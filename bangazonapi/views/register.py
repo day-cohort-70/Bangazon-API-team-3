@@ -56,6 +56,13 @@ def register_user(request):
     # Load the JSON string of the request body into a dict
     req_body = json.loads(request.body.decode())
 
+    if User.objects.filter(email=req_body["email"]).exists():
+        return HttpResponse(
+            "A user with that email already exists.",
+            content_type="text/plain",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     # Create a new user by invoking the `create_user` helper method
     # on Django's built-in User model
     new_user = User.objects.create_user(
