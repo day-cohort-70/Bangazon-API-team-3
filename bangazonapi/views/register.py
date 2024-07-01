@@ -1,7 +1,7 @@
 """Register user"""
 
 import json
-from django.http import HttpResponse, HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
@@ -55,6 +55,19 @@ def register_user(request):
 
     # Load the JSON string of the request body into a dict
     req_body = json.loads(request.body.decode())
+
+    fields_to_check = [("email", User), ("username", User), ("phone_number", Customer)]
+
+    # Check for existing fields
+    for field, model in fields_to_check:
+        if model.objects.filter(**{field: req_body[field]}).exists():
+            return JsonResponse(
+                {
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": f"A user with that {field.replace('_', ' ')} already exists.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     # Create a new user by invoking the `create_user` helper method
     # on Django's built-in User model
