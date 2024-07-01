@@ -6,17 +6,31 @@ from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
 from bangazonapi.models import OrderProduct, Order, Product, Customer
+from bangazonapi.views.product import ProductSerializer
 
 
 class LineItemSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for line items """
+
+    # Ensure that the product details are included in the serialized output
+    product = ProductSerializer(many=False)
+
+    # Add a custom field to represent the quantity in the cart
+    cart_quantity = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderProduct
         url = serializers.HyperlinkedIdentityField(
             view_name='lineitem',
             lookup_field='id'
         )
-        fields = ('id', 'url', 'order', 'product')
+        # Include the new cart_quantity field in the serialized output
+        fields = ('id', 'url', 'order', 'product', 'cart_quantity')
+
+    def get_cart_quantity(self, obj):
+        # Return the quantity from the OrderProduct model
+        # This represents the quantity in the cart, not the total stock
+        return obj.quantity
 
 class LineItems(ViewSet):
     """Line items for Bangazon orders"""
@@ -33,53 +47,6 @@ class LineItems(ViewSet):
     #   model in your API, or incorrectly configured the `lookup_field`
     #   attribute on this field.
     # queryset = OrderProduct.objects.all()
-
-
-    def update(self, request, pk=None):
-        """Update the quantity of a product in the cart"""
-        try:
-            # Get the current user
-            current_user = Customer.objects.get(user=request.auth.user)
-
-            # Get the open order (cart) for the current user
-            open_order = Order.objects.get(customer=current_user, payment_type=None)
-
-            # Get the line item
-            line_item = OrderProduct.objects.get(pk=pk, order=open_order)
-
-            # Get the new quantity from the request data
-            new_quantity = request.data.get('quantity')
-
-            # Ensure the new quantity is a positive integer
-            if new_quantity is not None and isinstance(new_quantity, int) and new_quantity > 0:
-                line_item.quantity = new_quantity
-                line_item.save()
-                return Response({
-                    'message': 'Quantity updated',
-                    'product': line_item.product.name,
-                    'quantity': line_item.quantity
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    'message': 'Invalid quantity. Please provide a positive integer.'
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-        except Customer.DoesNotExist:
-            return Response({
-                'message': 'Customer not found'
-            }, status=status.HTTP_404_NOT_FOUND)
-        except Order.DoesNotExist:
-            return Response({
-                'message': 'No open order found'
-            }, status=status.HTTP_404_NOT_FOUND)
-        except OrderProduct.DoesNotExist:
-            return Response({
-                'message': 'Product not found in cart'
-            }, status=status.HTTP_404_NOT_FOUND)
-        except Exception as ex:
-            return Response({
-                'message': str(ex)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def retrieve(self, request, pk=None):
