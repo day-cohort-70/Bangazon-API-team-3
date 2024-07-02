@@ -18,28 +18,6 @@ class Likes(viewsets.ModelViewSet):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
 
-    def create(self, request):
-        """Handle POST operations to like or unlike a product"""
-        customer = Customer.objects.get(user=request.auth.user)
-        product = Product.objects.get(pk=request.data["product_id"])
-
-        # Check if the like already exists
-        existing_like = Like.objects.filter(customer=customer, product=product).first()
-
-        if existing_like:
-            # If like exists, delete it (unlike)
-            existing_like.delete()
-            return Response(
-                {"message": "Like removed"}, status=status.HTTP_204_NO_CONTENT
-            )
-        else:
-            # If like does not exist, create it
-            like = Like.objects.create(customer=customer, product=product)
-            like.save()
-            serializer = LikeSerializer(like, context={"request": request})
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
     def list(self, request):
         """Handle GET requests to get all likes by the authenticated user"""
 
@@ -63,18 +41,3 @@ class Likes(viewsets.ModelViewSet):
         serializer = LikeSerializer(likes, many=True, context={"request": request})
 
         return Response(serializer.data)
-
-    def destroy(self, request, pk=None):
-        """Handle DELETE requests to unlike a product"""
-        try:
-            like = Like.objects.get(pk=pk, customer__user=request.auth.user)
-            like.delete()
-            return Response(None, status=status.HTTP_204_NO_CONTENT)
-
-        except Like.DoesNotExist as ex:
-            return Response({"message": ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
-
-        except Exception as ex:
-            return Response(
-                {"message": ex.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
