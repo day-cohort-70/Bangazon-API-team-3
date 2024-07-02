@@ -19,22 +19,40 @@ class Likes(viewsets.ModelViewSet):
     serializer_class = LikeSerializer
 
     def create(self, request):
-        """Handle POST operations to like a product"""
+        """Handle POST operations to like or unlike a product"""
         customer = Customer.objects.get(user=request.auth.user)
         product = Product.objects.get(pk=request.data["product_id"])
 
-        like = Like.objects.create(customer=customer, product=product)
-        like.save()
-        serializer = LikeSerializer(like, context={"request": request})
+        # Check if the like already exists
+        existing_like = Like.objects.filter(customer=customer, product=product).first()
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if existing_like:
+            # If like exists, delete it (unlike)
+            existing_like.delete()
+            return Response(
+                {"message": "Like removed"}, status=status.HTTP_204_NO_CONTENT
+            )
+        else:
+            # If like does not exist, create it
+            like = Like.objects.create(customer=customer, product=product)
+            like.save()
+            serializer = LikeSerializer(like, context={"request": request})
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def list(self, request):
         """Handle GET requests to get all likes by the authenticated user"""
 
-        likes = Like.objects.all()
         product = self.request.query_params.get("product", None)
         customer = self.request.query_params.get("customer", None)
+
+        if product is None and customer is None:
+            return Response(
+                {"message": "Please provide a product or customer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        likes = Like.objects.all()
 
         if product is not None:
             likes = likes.filter(product_id=product)
