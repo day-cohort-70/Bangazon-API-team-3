@@ -12,6 +12,7 @@ from rest_framework import status
 from bangazonapi.models import Product, Customer, ProductCategory
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
+from bangazonapi.models import Like
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -264,7 +265,6 @@ class Products(ViewSet):
 
         store = self.request.query_params.get("store", None)
 
-        
         # Support filtering by category and/or quantity
         category = self.request.query_params.get("category", None)
         quantity = self.request.query_params.get("quantity", None)
@@ -296,7 +296,7 @@ class Products(ViewSet):
                 return False
 
             products = filter(sold_filter, products)
-                
+
         if store is not None:
             products = products.filter(store__id=store)
 
@@ -312,7 +312,7 @@ class Products(ViewSet):
         )
         return Response(serializer.data)
 
-    @action(methods=["post"], detail=True)
+    @action(methods=["post"], detail=True, url_path="recommend")
     def recommend(self, request, pk=None):
         """Recommend products to other users"""
 
@@ -327,3 +327,44 @@ class Products(ViewSet):
             return Response(None, status=status.HTTP_204_NO_CONTENT)
 
         return Response(None, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(detail=True, methods=["post"], url_path="like")
+    def like_product(self, request, pk=None):
+        customer = Customer.objects.get(user=request.auth.user)
+        product = Product.objects.get(pk=pk)
+        like, created = Like.objects.get_or_create(customer=customer, product=product)
+
+        if created:
+            return Response(
+                {"message": "Product liked"}, status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response(
+                {"message": "Product already liked"}, status=status.HTTP_200_OK
+            )
+
+    # Custom action to unlike a product
+    @action(detail=True, methods=["delete"], url_path="unlike")
+    def unlike_product(self, request, pk=None):
+        customer = Customer.objects.get(user=request.auth.user)
+        try:
+            like = Like.objects.get(customer=customer, product__pk=pk)
+            like.delete()
+            return Response(
+                {"message": "Like removed"}, status=status.HTTP_204_NO_CONTENT
+            )
+        except Like.DoesNotExist:
+            return Response(
+                {"message": "Like not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+    # Custom action to get all liked products
+    @action(detail=False, methods=["get"], url_path="liked")
+    def liked_products(self, request):
+        customer = Customer.objects.get(user=request.auth.user)
+        likes = Like.objects.filter(customer=customer)
+        products = [like.product for like in likes]
+        serializer = ProductSerializer(
+            products, many=True, context={"request": request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
