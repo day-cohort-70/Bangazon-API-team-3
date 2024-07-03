@@ -93,11 +93,65 @@ class Profile(ViewSet):
         except Exception as ex:
             return HttpResponseServerError(ex)
 
-    @action(methods=['get', 'post', 'delete'], detail=False)
+    @action(methods=['get', 'post', 'put', 'delete'], detail=False)
     def cart(self, request):
         """Shopping cart manipulation"""
 
         current_user = Customer.objects.get(user=request.auth.user)
+
+        if request.method == "PUT":
+            """
+            @api {PUT} /profile/cart/:id UPDATE quantity of line item in cart
+            @apiName UpdateCartItem
+            @apiGroup UserProfile
+
+            @apiHeader {String} Authorization Auth token
+            @apiHeaderExample {String} Authorization
+                Token 9ba45f09651c5b0c404f37a2d2572c026c146611
+
+            @apiParam {Number} id Product Id to update in cart
+            @apiParam {Number} quantity New quantity for product in cart
+
+            @apiSuccessExample {json} Success
+                HTTP/1.1 204 No Content
+            """
+            try:
+                # Get the line item from the cart
+                line_item = OrderProduct.objects.get(
+                    id=request.data["id"],
+                    order__customer=current_user,
+                    order__payment_type=None,
+                )
+
+                # Update the quantity
+                new_cart_quantity = int(request.data["cart_quantity"])
+                if new_cart_quantity > 0:
+                    line_item.cart_quantity = new_cart_quantity
+                    line_item.save()
+                    return Response({"message": "Quantity updated successfully", "new_quantity": new_cart_quantity},
+                                    status=status.HTTP_200_OK
+                                    )
+                else:
+                    return Response(
+                        {"message": "Quantity must be greater than 0"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+            except OrderProduct.DoesNotExist:
+                return Response(
+                    {"message": "This item was not found in your cart"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            except KeyError:
+                return Response(
+                    {"message": "Missing required field: id or quantity"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            except ValueError:
+                return Response(
+                    {"message": "Quantity must be a number"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         if request.method == "DELETE":
             """
@@ -177,22 +231,30 @@ class Profile(ViewSet):
             @apiError (404) {String} message  Not found message
             """
             try:
-                open_order = Order.objects.get(
-                    customer=current_user, payment_type=None)
+                # Get the open order (cart) for the current user
+                open_order = Order.objects.get(customer=current_user, payment_type=None)
+
+                # Get all line items in the cart
                 line_items = OrderProduct.objects.filter(order=open_order)
-                line_items = LineItemSerializer(
+
+                # Serialize the line items
+                # This will include the cart_quantity for each item
+                line_items_serializer = LineItemSerializer(
                     line_items, many=True, context={'request': request})
+                
+                # Start with the serialized order data
+                cart = OrderSerializer(open_order, context={'request': request}).data
 
-                cart = {}
-                cart["order"] = OrderSerializer(open_order, many=False, context={
-                                                'request': request}).data
-                cart["order"]["line_items"] = line_items.data
-                cart["order"]["size"] = len(line_items.data)
+                # Add the line items to the cart data
+                cart["line_items"] = line_items_serializer.data
 
-            except Order.DoesNotExist as ex:
-                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+                # Add the number of unique items in the cart
+                cart["size"] = len(line_items)
 
-            return Response(cart["order"])
+                return Response(cart)
+            
+            except Order.DoesNotExist:
+                return Response({"message": "No open order found"}, status=status.HTTP_404_NOT_FOUND)
 
         if request.method == "POST":
             """
@@ -236,24 +298,38 @@ class Profile(ViewSet):
             """
 
             try:
-                open_order = Order.objects.get(customer=current_user)
+                # Try to get an existing open order (cart) for the user
+                open_order = Order.objects.get(customer=current_user, payment_type=None)
                 print(open_order)
             except Order.DoesNotExist as ex:
+                # If no open order exists, create a new one
                 open_order = Order()
                 open_order.created_date = datetime.datetime.now()
                 open_order.customer = current_user
                 open_order.save()
 
-            line_item = OrderProduct()
-            line_item.product = Product.objects.get(
-                pk=request.data["product_id"])
-            line_item.order = open_order
-            line_item.save()
+            # Get the product to be added to the cart
+            product = Product.objects.get(pk=request.data["product_id"])
 
+            # Check if the product is already in the cart
+            try:
+                line_item = OrderProduct.objects.get(order=open_order, product=product)
+                # If it is, increase the quantity by 1
+                line_item.cart_quantity += 1
+                line_item.save()
+            except OrderProduct.DoesNotExist:
+                # If it's not in the cart, create a new line item with quantity 1
+                line_item = OrderProduct()
+                line_item.product = product
+                line_item.order = open_order
+                line_item.cart_quantity = 1
+                line_item.save()
+
+            # Serialize the line item for the response
             line_item_json = LineItemSerializer(
                 line_item, many=False, context={'request': request})
 
-            return Response(line_item_json.data)
+            return Response(line_item_json.data, status=status.HTTP_201_CREATED)
 
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -323,7 +399,7 @@ class LineItemSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = OrderProduct
-        fields = ('id', 'product')
+        fields = ('id', 'product', 'cart_quantity')
         depth = 1
 
 

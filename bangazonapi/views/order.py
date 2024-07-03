@@ -22,7 +22,7 @@ class OrderLineItemSerializer(serializers.HyperlinkedModelSerializer):
             view_name='lineitem',
             lookup_field='id'
         )
-        fields = ('id', 'product')
+        fields = ('id', 'product', 'cart_quantity')
         depth = 1
 
 class PaymentSericalizer(serializers.ModelSerializer):
@@ -33,12 +33,12 @@ class PaymentSericalizer(serializers.ModelSerializer):
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for customer orders"""
 
-    lineitems = OrderLineItemSerializer(many=True)
+    line_items = OrderLineItemSerializer(many=True)
     payment_type = PaymentSericalizer(read_only=True)
     total = serializers.SerializerMethodField()
 
     def get_total(self, obj):
-        total = obj.lineitems.aggregate(
+        total = obj.line_items.aggregate(
             total=Sum(F('product__price') * F('product__quantity'))
         )['total']
         if total is not None:
@@ -51,7 +51,7 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
             view_name='order',
             lookup_field='id'
         )
-        fields = ('id', 'url', 'created_date', 'payment_type', 'customer', 'lineitems', 'total')
+        fields = ('id', 'url', 'created_date', 'payment_type', 'customer', 'line_items', 'total')
 
 
 class Orders(ViewSet):
