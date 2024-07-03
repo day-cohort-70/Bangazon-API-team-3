@@ -18,6 +18,8 @@ from bangazonapi.models import Like
 class ProductSerializer(serializers.ModelSerializer):
     """JSON serializer for products"""
 
+    is_liked = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = (
@@ -33,8 +35,18 @@ class ProductSerializer(serializers.ModelSerializer):
             "average_rating",
             "can_be_rated",
             "store_id",
+            "is_liked",
         )
         depth = 1
+
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        try:
+            customer = Customer.objects.get(user=request.auth.user)
+            like = Like.objects.get(customer=customer, product=obj)
+            return True
+        except Like.DoesNotExist:
+            return False
 
 
 class Products(ViewSet):
