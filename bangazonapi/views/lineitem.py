@@ -7,6 +7,7 @@ from rest_framework import serializers
 from rest_framework import status
 from bangazonapi.models import OrderProduct, Order, Product, Customer
 from bangazonapi.views.product import ProductSerializer
+from rest_framework.permissions import IsAuthenticated
 
 
 class LineItemSerializer(serializers.HyperlinkedModelSerializer):
@@ -48,6 +49,7 @@ class LineItems(ViewSet):
     #   attribute on this field.
     # queryset = OrderProduct.objects.all()
 
+    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, pk=None):
         """
@@ -77,7 +79,7 @@ class LineItems(ViewSet):
 
     def destroy(self, request, pk=None):
         """
-        @api {DELETE} /cart/:id DELETE line item from cart
+        @api {DELETE} /lineitems/:id DELETE line item from cart
         @apiName RemoveLineItem
         @apiGroup ShoppingCart
 
@@ -92,6 +94,7 @@ class LineItems(ViewSet):
         try:
             customer = Customer.objects.get(user=request.auth.user)
             order_product = OrderProduct.objects.get(pk=pk, order__customer=customer)
+            order_product.delete()
 
             return Response({}, status=status.HTTP_204_NO_CONTENT)
 
