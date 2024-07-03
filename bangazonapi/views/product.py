@@ -283,6 +283,7 @@ class Products(ViewSet):
         order = self.request.query_params.get("order_by", None)
         direction = self.request.query_params.get("direction", None)
         number_sold = self.request.query_params.get("number_sold", None)
+        price = self.request.query_params.get("price", None)
 
         if order is not None:
             order_filter = order
@@ -310,6 +311,13 @@ class Products(ViewSet):
 
         if store is not None:
             products = products.filter(store__id=store)
+
+        if price is not None:
+            try:
+                price = float(price) 
+                products = products.filter(price__gte=price) 
+            except ValueError:
+                return Response({"error": "Invalid format for minimum price. Please enter a valid number."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = ProductSerializer(
             products, many=True, context={"request": request}

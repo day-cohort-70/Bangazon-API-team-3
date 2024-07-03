@@ -6,17 +6,31 @@ from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
 from bangazonapi.models import OrderProduct, Order, Product, Customer
+from bangazonapi.views.product import ProductSerializer
 
 
 class LineItemSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for line items """
+
+    # Ensure that the product details are included in the serialized output
+    product = ProductSerializer(many=False)
+
+    # Add a custom field to represent the quantity in the cart
+    cart_quantity = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderProduct
         url = serializers.HyperlinkedIdentityField(
             view_name='lineitem',
             lookup_field='id'
         )
-        fields = ('id', 'url', 'order', 'product')
+        # Include the new cart_quantity field in the serialized output
+        fields = ('id', 'url', 'order', 'product', 'cart_quantity')
+
+    def get_cart_quantity(self, obj):
+        # Return the quantity from the OrderProduct model
+        # This represents the quantity in the cart, not the total stock
+        return obj.quantity
 
 class LineItems(ViewSet):
     """Line items for Bangazon orders"""
@@ -33,6 +47,7 @@ class LineItems(ViewSet):
     #   model in your API, or incorrectly configured the `lookup_field`
     #   attribute on this field.
     # queryset = OrderProduct.objects.all()
+
 
     def retrieve(self, request, pk=None):
         """
