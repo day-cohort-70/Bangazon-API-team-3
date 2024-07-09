@@ -29,4 +29,5 @@ urlpatterns = [
     path("login", login_user),
     path("api-token-auth", obtain_auth_token),
     path("api-auth", include("rest_framework.urls", namespace="rest_framework")),
+    path("reports/orders", PaidOrdersReportView.as_view(), name='paid_orders_report'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

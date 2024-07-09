@@ -1,26 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paid Orders Report</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
-</head>
+<html>
 <body>
-    <h1>Paid Orders Report</h1>
+    <h1>Orders Report</h1>
     <table>
         <thead>
             <tr>
@@ -36,7 +17,7 @@
                 <td>{{ order.id }}</td>
                 <td>{{ order.customer.name }}</td>
                 <td>{{ order.total_amount }}</td>
-                <td>{{ order.payment.payment_type }}</td>
+                <td>{{ order.payment_type }}</td>
             </tr>
             {% endfor %}
         </tbody>
