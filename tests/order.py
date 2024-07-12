@@ -20,7 +20,7 @@ class OrderTests(APITestCase):
 
         # Create a store
         url = "/stores"
-        store_data = {"name": "Big Bucks", "description": "a store", "seller": self.user_id, "created_date": datetime.date.today().isoformat()}
+        store_data = {"name": "Big Bucks", "description": "a store"}
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         store_response = self.client.post(url, store_data, format='json')
         self.assertEqual(store_response.status_code, status.HTTP_201_CREATED)

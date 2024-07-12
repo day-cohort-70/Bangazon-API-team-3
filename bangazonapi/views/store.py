@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import status
-from bangazonapi.models import Store, Product
+from bangazonapi.models import Store, Product, Customer
+from rest_framework.permissions import IsAuthenticated
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -21,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class StoreSerializer(serializers.ModelSerializer):
     seller = UserSerializer(source="seller.user", read_only=True)
-    product_count = serializers.IntegerField()
+    product_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Store
@@ -29,6 +30,7 @@ class StoreSerializer(serializers.ModelSerializer):
 
 
 class Stores(ViewSet):
+
     def list(self, request):
         stores = Store.objects.annotate(product_count=Count("products"))
         serializer = StoreSerializer(stores, many=True, context={"request": request})
@@ -36,8 +38,8 @@ class Stores(ViewSet):
     
     def create(self, request):
         serializer = StoreSerializer(data=request.data)
+        seller = Customer.objects.get(user=request.auth.user)
         if serializer.is_valid():
-            # Assuming the Store model has a seller field that's a ForeignKey to User
-            serializer.save(seller=request.user)
+            serializer.save(seller=seller)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
