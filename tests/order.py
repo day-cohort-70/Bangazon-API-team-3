@@ -26,7 +26,7 @@ class OrderTests(APITestCase):
         self.assertEqual(store_response.status_code, status.HTTP_201_CREATED)
         store_json = json.loads(store_response.content)
         self.store_id = store_json['id']
-
+        print(f"Store ID: {self.store_id}")
 
         # Create a product category
         url = "/productcategories"

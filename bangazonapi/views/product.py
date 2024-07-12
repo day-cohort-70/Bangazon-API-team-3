@@ -12,7 +12,7 @@ from rest_framework import status
 from bangazonapi.models import Product, Customer, ProductCategory
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
-from bangazonapi.models import Like
+from bangazonapi.models import Like, Store
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -123,6 +123,21 @@ class Products(ViewSet):
 
         product_category = ProductCategory.objects.get(pk=request.data["category_id"])
         new_product.category = product_category
+
+        if "store_id" in request.data:
+            try:
+                store = Store.objects.get(pk=request.data["store_id"])
+                new_product.store = store
+            except Store.DoesNotExist:
+                return Response(
+                    {"error": "Invalid store ID"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response(
+                {"error": "store_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if "image_path" in request.data:
             format, imgstr = request.data["image_path"].split(";base64,")
