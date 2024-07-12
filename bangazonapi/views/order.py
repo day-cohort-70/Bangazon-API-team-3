@@ -2,6 +2,7 @@
 import datetime
 from django.http import HttpResponseServerError
 from django.db.models import Sum, F
+from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers
@@ -120,8 +121,12 @@ class Orders(ViewSet):
         """
         customer = Customer.objects.get(user=request.auth.user)
         order = Order.objects.get(pk=pk, customer=customer)
-        order.payment_type = request.data["payment_type"]
-        order.save()
+
+        payment_type_id = request.data.get("payment_type")
+        if payment_type_id:
+            payment = get_object_or_404(Payment, pk=payment_type_id)
+            order.payment_type = payment
+            order.save()
 
         return Response({}, status=status.HTTP_204_NO_CONTENT)
 
