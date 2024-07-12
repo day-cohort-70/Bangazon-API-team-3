@@ -79,6 +79,25 @@ class OrderTests(APITestCase):
         self.assertEqual(json_response["size"], 0)
         self.assertEqual(len(json_response["lineitems"]), 0)
 
-    # TODO: Complete order by adding payment type
+    def test_complete_order_with_payment(self):
+        """
+        Ensure that an order can be completed with a PUT request containing the payment ID
+        """
+        #add item to cart
+        self.test_add_product_to_order
 
+        #add payment
+        url = "/orders/1"
+        data = { "payment_type": 1 }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        #fetch the order again to verify changes were made
+        response = self.client.get(f"/orders/1")
+        json_response = json.loads(response.content)
+
+        #assert that the properties are correct
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json_response["payment_type"], 1)
     # TODO: New line item is not added to closed order
